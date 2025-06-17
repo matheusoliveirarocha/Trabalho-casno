@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BlackjackService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cassino Online Microservice</a> &gt; <a href="index.source.html" class="el_package">com.cassino.online.service</a> &gt; <span class="el_source">BlackjackService.java</span></div><h1>BlackjackService.java</h1><pre class="source lang-java linenums">package com.cassino.online.service;
+
+import com.cassino.online.dto.JogadaBlackjackDTO;
+import com.cassino.online.dto.ResultadoPartidaDTO;
+import com.cassino.online.enums.StatusPartida;
+import com.cassino.online.model.Partida;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+/**
+ * Serviço para o jogo Blackjack
+ */
+@Service
+public class BlackjackService {
+
+    private final PartidaService partidaService;
+<span class="nc" id="L22">    private final Random random = new Random();</span>
+
+    @Autowired
+<span class="nc" id="L25">    public BlackjackService(PartidaService partidaService) {</span>
+<span class="nc" id="L26">        this.partidaService = partidaService;</span>
+<span class="nc" id="L27">    }</span>
+
+    /**
+     * Inicia uma partida de Blackjack
+     */
+    public EstadoBlackjack iniciarBlackjack(Long partidaId) {
+<span class="nc" id="L33">        Partida partida = partidaService.buscarPartidaPorId(partidaId)</span>
+<span class="nc" id="L34">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Partida não encontrada&quot;));</span>
+
+        // Distribui cartas iniciais
+<span class="nc" id="L37">        List&lt;Integer&gt; cartasJogador = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L38">        List&lt;Integer&gt; cartasDealer = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L40">        cartasJogador.add(sortearCarta());</span>
+<span class="nc" id="L41">        cartasJogador.add(sortearCarta());</span>
+<span class="nc" id="L42">        cartasDealer.add(sortearCarta());</span>
+<span class="nc" id="L43">        cartasDealer.add(sortearCarta()); // Segunda carta do dealer fica oculta</span>
+
+<span class="nc" id="L45">        int pontuacaoJogador = calcularPontuacao(cartasJogador);</span>
+<span class="nc" id="L46">        int pontuacaoDealer = cartasDealer.get(0); // Apenas primeira carta visível</span>
+
+<span class="nc" id="L48">        EstadoBlackjack estado = new EstadoBlackjack(</span>
+                partidaId,
+                cartasJogador,
+                cartasDealer,
+                pontuacaoJogador,
+                pontuacaoDealer,
+                false
+        );
+
+        // Verifica blackjack natural
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (pontuacaoJogador == 21) {</span>
+<span class="nc" id="L59">            return finalizarBlackjack(partidaId, &quot;STAND&quot;);</span>
+        }
+
+<span class="nc" id="L62">        return estado;</span>
+    }
+
+    /**
+     * Processa uma jogada no Blackjack
+     */
+    public EstadoBlackjack jogarBlackjack(Long partidaId, JogadaBlackjackDTO jogada) {
+<span class="nc" id="L69">        Partida partida = partidaService.buscarPartidaPorId(partidaId)</span>
+<span class="nc" id="L70">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Partida não encontrada&quot;));</span>
+
+        // Simula estado atual (em uma implementação real, isso seria persistido)
+<span class="nc" id="L73">        EstadoBlackjack estadoAtual = recuperarEstadoBlackjack(partidaId);</span>
+
+<span class="nc bnc" id="L75" title="All 4 branches missed.">        switch (jogada.getAcao().toUpperCase()) {</span>
+            case &quot;HIT&quot;:
+<span class="nc" id="L77">                return hit(estadoAtual);</span>
+            case &quot;STAND&quot;:
+<span class="nc" id="L79">                return finalizarBlackjack(partidaId, &quot;STAND&quot;);</span>
+            case &quot;DOUBLE&quot;:
+<span class="nc" id="L81">                return doubleDown(estadoAtual);</span>
+            default:
+<span class="nc" id="L83">                throw new IllegalArgumentException(&quot;Ação inválida: &quot; + jogada.getAcao());</span>
+        }
+    }
+
+    /**
+     * Pede mais uma carta (HIT)
+     */
+    private EstadoBlackjack hit(EstadoBlackjack estado) {
+<span class="nc" id="L91">        estado.getCartasJogador().add(sortearCarta());</span>
+<span class="nc" id="L92">        int novaPontuacao = calcularPontuacao(estado.getCartasJogador());</span>
+<span class="nc" id="L93">        estado.setPontuacaoJogador(novaPontuacao);</span>
+
+        // Verifica se estourou
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (novaPontuacao &gt; 21) {</span>
+<span class="nc" id="L97">            return finalizarBlackjack(estado.getPartidaId(), &quot;BUST&quot;);</span>
+        }
+
+<span class="nc" id="L100">        return estado;</span>
+    }
+
+    /**
+     * Dobra a aposta e pede uma carta
+     */
+    private EstadoBlackjack doubleDown(EstadoBlackjack estado) {
+<span class="nc" id="L107">        estado.getCartasJogador().add(sortearCarta());</span>
+<span class="nc" id="L108">        int novaPontuacao = calcularPontuacao(estado.getCartasJogador());</span>
+<span class="nc" id="L109">        estado.setPontuacaoJogador(novaPontuacao);</span>
+
+<span class="nc" id="L111">        return finalizarBlackjack(estado.getPartidaId(), &quot;DOUBLE&quot;);</span>
+    }
+
+    /**
+     * Finaliza a partida de Blackjack
+     */
+    private EstadoBlackjack finalizarBlackjack(Long partidaId, String acao) {
+<span class="nc" id="L118">        Partida partida = partidaService.buscarPartidaPorId(partidaId)</span>
+<span class="nc" id="L119">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Partida não encontrada&quot;));</span>
+
+<span class="nc" id="L121">        EstadoBlackjack estado = recuperarEstadoBlackjack(partidaId);</span>
+        
+        // Revela segunda carta do dealer e joga até 17
+<span class="nc" id="L124">        int pontuacaoDealer = calcularPontuacao(estado.getCartasDealer());</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        while (pontuacaoDealer &lt; 17) {</span>
+<span class="nc" id="L126">            estado.getCartasDealer().add(sortearCarta());</span>
+<span class="nc" id="L127">            pontuacaoDealer = calcularPontuacao(estado.getCartasDealer());</span>
+        }
+<span class="nc" id="L129">        estado.setPontuacaoDealer(pontuacaoDealer);</span>
+<span class="nc" id="L130">        estado.setFinalizada(true);</span>
+
+        // Determina resultado
+<span class="nc" id="L133">        int pontuacaoJogador = estado.getPontuacaoJogador();</span>
+        StatusPartida status;
+<span class="nc" id="L135">        BigDecimal valorGanho = BigDecimal.ZERO;</span>
+        String resultado;
+
+<span class="nc bnc" id="L138" title="All 4 branches missed.">        if (acao.equals(&quot;BUST&quot;) || pontuacaoJogador &gt; 21) {</span>
+<span class="nc" id="L139">            status = StatusPartida.DERROTA;</span>
+<span class="nc" id="L140">            resultado = String.format(&quot;Jogador estourou com %d pontos. Dealer: %d&quot;, pontuacaoJogador, pontuacaoDealer);</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        } else if (pontuacaoDealer &gt; 21) {</span>
+<span class="nc" id="L142">            status = StatusPartida.VITORIA;</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">            valorGanho = acao.equals(&quot;DOUBLE&quot;) ? partida.getValorAposta().multiply(BigDecimal.valueOf(4)) : partida.getValorAposta().multiply(BigDecimal.valueOf(2));</span>
+<span class="nc" id="L144">            resultado = String.format(&quot;Dealer estourou com %d pontos. Jogador: %d&quot;, pontuacaoDealer, pontuacaoJogador);</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        } else if (pontuacaoJogador &gt; pontuacaoDealer) {</span>
+<span class="nc" id="L146">            status = StatusPartida.VITORIA;</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            valorGanho = acao.equals(&quot;DOUBLE&quot;) ? partida.getValorAposta().multiply(BigDecimal.valueOf(4)) : partida.getValorAposta().multiply(BigDecimal.valueOf(2));</span>
+<span class="nc" id="L148">            resultado = String.format(&quot;Jogador venceu: %d vs %d&quot;, pontuacaoJogador, pontuacaoDealer);</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        } else if (pontuacaoJogador &lt; pontuacaoDealer) {</span>
+<span class="nc" id="L150">            status = StatusPartida.DERROTA;</span>
+<span class="nc" id="L151">            resultado = String.format(&quot;Dealer venceu: %d vs %d&quot;, pontuacaoDealer, pontuacaoJogador);</span>
+        } else {
+<span class="nc" id="L153">            status = StatusPartida.EMPATE;</span>
+<span class="nc" id="L154">            valorGanho = partida.getValorAposta(); // Devolve a aposta</span>
+<span class="nc" id="L155">            resultado = String.format(&quot;Empate: %d vs %d&quot;, pontuacaoJogador, pontuacaoDealer);</span>
+        }
+
+<span class="nc" id="L158">        partidaService.finalizarPartida(partidaId, status, valorGanho, resultado);</span>
+<span class="nc" id="L159">        return estado;</span>
+    }
+
+    /**
+     * Sorteia uma carta (1-11, onde 1 é Ás e pode valer 11)
+     */
+    private int sortearCarta() {
+<span class="nc" id="L166">        int carta = random.nextInt(13) + 1;</span>
+<span class="nc" id="L167">        return Math.min(carta, 10); // J, Q, K valem 10</span>
+    }
+
+    /**
+     * Calcula a pontuação das cartas
+     */
+    private int calcularPontuacao(List&lt;Integer&gt; cartas) {
+<span class="nc" id="L174">        int pontuacao = 0;</span>
+<span class="nc" id="L175">        int ases = 0;</span>
+
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        for (int carta : cartas) {</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            if (carta == 1) {</span>
+<span class="nc" id="L179">                ases++;</span>
+<span class="nc" id="L180">                pontuacao += 11;</span>
+            } else {
+<span class="nc" id="L182">                pontuacao += carta;</span>
+            }
+<span class="nc" id="L184">        }</span>
+
+        // Ajusta Ases de 11 para 1 se necessário
+<span class="nc bnc" id="L187" title="All 4 branches missed.">        while (pontuacao &gt; 21 &amp;&amp; ases &gt; 0) {</span>
+<span class="nc" id="L188">            pontuacao -= 10;</span>
+<span class="nc" id="L189">            ases--;</span>
+        }
+
+<span class="nc" id="L192">        return pontuacao;</span>
+    }
+
+    /**
+     * Recupera o estado atual do Blackjack (simulado)
+     */
+    private EstadoBlackjack recuperarEstadoBlackjack(Long partidaId) {
+        // Em uma implementação real, isso seria recuperado do banco de dados ou cache
+        // Por simplicidade, vamos simular um estado
+<span class="nc" id="L201">        List&lt;Integer&gt; cartasJogador = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L202">        List&lt;Integer&gt; cartasDealer = new ArrayList&lt;&gt;();</span>
+        
+<span class="nc" id="L204">        cartasJogador.add(sortearCarta());</span>
+<span class="nc" id="L205">        cartasJogador.add(sortearCarta());</span>
+<span class="nc" id="L206">        cartasDealer.add(sortearCarta());</span>
+<span class="nc" id="L207">        cartasDealer.add(sortearCarta());</span>
+
+<span class="nc" id="L209">        return new EstadoBlackjack(</span>
+                partidaId,
+                cartasJogador,
+                cartasDealer,
+<span class="nc" id="L213">                calcularPontuacao(cartasJogador),</span>
+<span class="nc" id="L214">                cartasDealer.get(0),</span>
+                false
+        );
+    }
+
+    /**
+     * Classe para representar o estado do Blackjack
+     */
+    public static class EstadoBlackjack {
+        private Long partidaId;
+        private List&lt;Integer&gt; cartasJogador;
+        private List&lt;Integer&gt; cartasDealer;
+        private int pontuacaoJogador;
+        private int pontuacaoDealer;
+        private boolean finalizada;
+
+        public EstadoBlackjack(Long partidaId, List&lt;Integer&gt; cartasJogador, List&lt;Integer&gt; cartasDealer, 
+<span class="nc" id="L231">                              int pontuacaoJogador, int pontuacaoDealer, boolean finalizada) {</span>
+<span class="nc" id="L232">            this.partidaId = partidaId;</span>
+<span class="nc" id="L233">            this.cartasJogador = cartasJogador;</span>
+<span class="nc" id="L234">            this.cartasDealer = cartasDealer;</span>
+<span class="nc" id="L235">            this.pontuacaoJogador = pontuacaoJogador;</span>
+<span class="nc" id="L236">            this.pontuacaoDealer = pontuacaoDealer;</span>
+<span class="nc" id="L237">            this.finalizada = finalizada;</span>
+<span class="nc" id="L238">        }</span>
+
+        // Getters e Setters
+<span class="nc" id="L241">        public Long getPartidaId() { return partidaId; }</span>
+<span class="nc" id="L242">        public List&lt;Integer&gt; getCartasJogador() { return cartasJogador; }</span>
+<span class="nc" id="L243">        public List&lt;Integer&gt; getCartasDealer() { return cartasDealer; }</span>
+<span class="nc" id="L244">        public int getPontuacaoJogador() { return pontuacaoJogador; }</span>
+<span class="nc" id="L245">        public void setPontuacaoJogador(int pontuacaoJogador) { this.pontuacaoJogador = pontuacaoJogador; }</span>
+<span class="nc" id="L246">        public int getPontuacaoDealer() { return pontuacaoDealer; }</span>
+<span class="nc" id="L247">        public void setPontuacaoDealer(int pontuacaoDealer) { this.pontuacaoDealer = pontuacaoDealer; }</span>
+<span class="nc" id="L248">        public boolean isFinalizada() { return finalizada; }</span>
+<span class="nc" id="L249">        public void setFinalizada(boolean finalizada) { this.finalizada = finalizada; }</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TipoJogo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cassino Online Microservice</a> &gt; <a href="index.source.html" class="el_package">com.cassino.online.enums</a> &gt; <span class="el_source">TipoJogo.java</span></div><h1>TipoJogo.java</h1><pre class="source lang-java linenums">package com.cassino.online.enums;
+
+/**
+ * Enum para os tipos de jogos disponíveis no cassino
+ */
+<span class="fc" id="L6">public enum TipoJogo {</span>
+<span class="fc" id="L7">    BLACKJACK(&quot;Blackjack&quot;, &quot;Jogo de cartas onde o objetivo é chegar o mais próximo possível de 21&quot;),</span>
+<span class="fc" id="L8">    ROLETA(&quot;Roleta&quot;, &quot;Jogo de azar com uma roda numerada de 0 a 36&quot;),</span>
+<span class="fc" id="L9">    SLOT_MACHINE(&quot;Slot Machine&quot;, &quot;Máquina caça-níqueis com símbolos e combinações premiadas&quot;);</span>
+
+    private final String nome;
+    private final String descricao;
+
+<span class="fc" id="L14">    TipoJogo(String nome, String descricao) {</span>
+<span class="fc" id="L15">        this.nome = nome;</span>
+<span class="fc" id="L16">        this.descricao = descricao;</span>
+<span class="fc" id="L17">    }</span>
+
+    public String getNome() {
+<span class="nc" id="L20">        return nome;</span>
+    }
+
+    public String getDescricao() {
+<span class="nc" id="L24">        return descricao;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

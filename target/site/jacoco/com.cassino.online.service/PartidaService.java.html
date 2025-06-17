@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PartidaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cassino Online Microservice</a> &gt; <a href="index.source.html" class="el_package">com.cassino.online.service</a> &gt; <span class="el_source">PartidaService.java</span></div><h1>PartidaService.java</h1><pre class="source lang-java linenums">package com.cassino.online.service;
+
+import com.cassino.online.dto.IniciarPartidaDTO;
+import com.cassino.online.dto.ResultadoPartidaDTO;
+import com.cassino.online.enums.StatusPartida;
+import com.cassino.online.enums.TipoJogo;
+import com.cassino.online.model.Partida;
+import com.cassino.online.repository.PartidaRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Serviço para gerenciamento de partidas
+ */
+@Service
+@Transactional
+public class PartidaService {
+
+    private final PartidaRepository partidaRepository;
+
+    @Autowired
+<span class="fc" id="L28">    public PartidaService(PartidaRepository partidaRepository) {</span>
+<span class="fc" id="L29">        this.partidaRepository = partidaRepository;</span>
+<span class="fc" id="L30">    }</span>
+
+    /**
+     * Inicia uma nova partida
+     */
+    public Partida iniciarPartida(IniciarPartidaDTO iniciarPartidaDTO) {
+        // Verifica se o jogador já tem partidas em andamento
+<span class="fc" id="L37">        List&lt;Partida&gt; partidasEmAndamento = partidaRepository.findByNomeJogadorAndStatus(</span>
+<span class="fc" id="L38">                iniciarPartidaDTO.getNomeJogador(), StatusPartida.EM_ANDAMENTO);</span>
+        
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (!partidasEmAndamento.isEmpty()) {</span>
+<span class="fc" id="L41">            throw new IllegalStateException(&quot;Jogador já possui uma partida em andamento. Finalize a partida atual antes de iniciar uma nova.&quot;);</span>
+        }
+
+<span class="fc" id="L44">        Partida novaPartida = new Partida(</span>
+<span class="fc" id="L45">                iniciarPartidaDTO.getNomeJogador(),</span>
+<span class="fc" id="L46">                iniciarPartidaDTO.getTipoJogo(),</span>
+<span class="fc" id="L47">                iniciarPartidaDTO.getValorAposta()</span>
+        );
+
+<span class="fc" id="L50">        return partidaRepository.save(novaPartida);</span>
+    }
+
+    /**
+     * Lista todas as partidas
+     */
+    @Transactional(readOnly = true)
+    public List&lt;Partida&gt; listarTodasPartidas() {
+<span class="fc" id="L58">        return partidaRepository.findAll();</span>
+    }
+
+    /**
+     * Busca uma partida por ID
+     */
+    @Transactional(readOnly = true)
+    public Optional&lt;Partida&gt; buscarPartidaPorId(Long id) {
+<span class="fc" id="L66">        return partidaRepository.findById(id);</span>
+    }
+
+    /**
+     * Busca partidas por jogador
+     */
+    @Transactional(readOnly = true)
+    public List&lt;Partida&gt; buscarPartidasPorJogador(String nomeJogador) {
+<span class="fc" id="L74">        return partidaRepository.findByNomeJogadorContainingIgnoreCase(nomeJogador);</span>
+    }
+
+    /**
+     * Busca partidas por tipo de jogo
+     */
+    @Transactional(readOnly = true)
+    public List&lt;Partida&gt; buscarPartidasPorTipo(TipoJogo tipoJogo) {
+<span class="fc" id="L82">        return partidaRepository.findByTipoJogo(tipoJogo);</span>
+    }
+
+    /**
+     * Busca partidas em andamento
+     */
+    @Transactional(readOnly = true)
+    public List&lt;Partida&gt; buscarPartidasEmAndamento() {
+<span class="fc" id="L90">        return partidaRepository.findByStatus(StatusPartida.EM_ANDAMENTO);</span>
+    }
+
+    /**
+     * Finaliza uma partida
+     */
+    public ResultadoPartidaDTO finalizarPartida(Long partidaId, StatusPartida novoStatus, BigDecimal valorGanho, String resultado) {
+<span class="nc" id="L97">        Partida partida = partidaRepository.findById(partidaId)</span>
+<span class="nc" id="L98">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Partida não encontrada com ID: &quot; + partidaId));</span>
+
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        if (partida.getStatus() != StatusPartida.EM_ANDAMENTO) {</span>
+<span class="nc" id="L101">            throw new IllegalStateException(&quot;Partida já foi finalizada&quot;);</span>
+        }
+
+<span class="nc" id="L104">        partida.finalizarPartida(novoStatus, valorGanho, resultado);</span>
+<span class="nc" id="L105">        Partida partidaSalva = partidaRepository.save(partida);</span>
+
+<span class="nc" id="L107">        return criarResultadoDTO(partidaSalva);</span>
+    }
+
+    /**
+     * Cancela uma partida
+     */
+    public void cancelarPartida(Long partidaId) {
+<span class="fc" id="L114">        Partida partida = partidaRepository.findById(partidaId)</span>
+<span class="fc" id="L115">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Partida não encontrada com ID: &quot; + partidaId));</span>
+
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (partida.getStatus() != StatusPartida.EM_ANDAMENTO) {</span>
+<span class="fc" id="L118">            throw new IllegalStateException(&quot;Apenas partidas em andamento podem ser canceladas&quot;);</span>
+        }
+
+<span class="fc" id="L121">        partida.finalizarPartida(StatusPartida.CANCELADA, BigDecimal.ZERO, &quot;Partida cancelada pelo jogador&quot;);</span>
+<span class="fc" id="L122">        partidaRepository.save(partida);</span>
+<span class="fc" id="L123">    }</span>
+
+    /**
+     * Busca histórico de partidas finalizadas de um jogador
+     */
+    @Transactional(readOnly = true)
+    public List&lt;Partida&gt; buscarHistoricoJogador(String nomeJogador) {
+<span class="nc" id="L130">        return partidaRepository.findPartidasFinalizada(nomeJogador, StatusPartida.EM_ANDAMENTO);</span>
+    }
+
+    /**
+     * Busca partidas por período
+     */
+    @Transactional(readOnly = true)
+    public List&lt;Partida&gt; buscarPartidasPorPeriodo(LocalDateTime dataInicio, LocalDateTime dataFim) {
+<span class="nc" id="L138">        return partidaRepository.findByPeriodo(dataInicio, dataFim);</span>
+    }
+
+    /**
+     * Calcula estatísticas de um jogador
+     */
+    @Transactional(readOnly = true)
+    public EstatisticasJogadorDTO calcularEstatisticasJogador(String nomeJogador) {
+<span class="fc" id="L146">        List&lt;Partida&gt; todasPartidas = partidaRepository.findByNomeJogadorContainingIgnoreCase(nomeJogador);</span>
+        
+<span class="fc" id="L148">        long totalPartidas = todasPartidas.size();</span>
+<span class="fc" id="L149">        long vitorias = partidaRepository.contarVitoriasPorJogador(nomeJogador, StatusPartida.VITORIA);</span>
+        
+<span class="fc" id="L151">        BigDecimal totalApostado = todasPartidas.stream()</span>
+<span class="fc" id="L152">                .map(Partida::getValorAposta)</span>
+<span class="fc" id="L153">                .reduce(BigDecimal.ZERO, BigDecimal::add);</span>
+        
+<span class="fc" id="L155">        BigDecimal totalGanho = todasPartidas.stream()</span>
+<span class="fc" id="L156">                .map(Partida::getValorGanho)</span>
+<span class="fc" id="L157">                .reduce(BigDecimal.ZERO, BigDecimal::add);</span>
+
+<span class="fc" id="L159">        return new EstatisticasJogadorDTO(nomeJogador, totalPartidas, vitorias, totalApostado, totalGanho);</span>
+    }
+
+    /**
+     * Cria um DTO de resultado da partida
+     */
+    private ResultadoPartidaDTO criarResultadoDTO(Partida partida) {
+<span class="nc bnc" id="L166" title="All 5 branches missed.">        String mensagem = switch (partida.getStatus()) {</span>
+<span class="nc" id="L167">            case VITORIA -&gt; &quot;Parabéns! Você ganhou!&quot;;</span>
+<span class="nc" id="L168">            case DERROTA -&gt; &quot;Que pena! Você perdeu.&quot;;</span>
+<span class="nc" id="L169">            case EMPATE -&gt; &quot;Empate! Sua aposta foi devolvida.&quot;;</span>
+<span class="nc" id="L170">            case CANCELADA -&gt; &quot;Partida cancelada.&quot;;</span>
+<span class="nc" id="L171">            default -&gt; &quot;Partida em andamento.&quot;;</span>
+        };
+
+<span class="nc" id="L174">        return new ResultadoPartidaDTO(</span>
+<span class="nc" id="L175">                partida.getId(),</span>
+<span class="nc" id="L176">                partida.getStatus().getDescricao(),</span>
+<span class="nc" id="L177">                partida.getResultadoJogo(),</span>
+<span class="nc" id="L178">                partida.getValorGanho().toString(),</span>
+<span class="nc" id="L179">                partida.calcularLucroLiquido().toString(),</span>
+                mensagem
+        );
+    }
+
+    /**
+     * Classe interna para estatísticas do jogador
+     */
+    public static class EstatisticasJogadorDTO {
+        private String nomeJogador;
+        private long totalPartidas;
+        private long vitorias;
+        private BigDecimal totalApostado;
+        private BigDecimal totalGanho;
+
+<span class="fc" id="L194">        public EstatisticasJogadorDTO(String nomeJogador, long totalPartidas, long vitorias, BigDecimal totalApostado, BigDecimal totalGanho) {</span>
+<span class="fc" id="L195">            this.nomeJogador = nomeJogador;</span>
+<span class="fc" id="L196">            this.totalPartidas = totalPartidas;</span>
+<span class="fc" id="L197">            this.vitorias = vitorias;</span>
+<span class="fc" id="L198">            this.totalApostado = totalApostado;</span>
+<span class="fc" id="L199">            this.totalGanho = totalGanho;</span>
+<span class="fc" id="L200">        }</span>
+
+        // Getters
+<span class="fc" id="L203">        public String getNomeJogador() { return nomeJogador; }</span>
+<span class="fc" id="L204">        public long getTotalPartidas() { return totalPartidas; }</span>
+<span class="fc" id="L205">        public long getVitorias() { return vitorias; }</span>
+<span class="nc" id="L206">        public BigDecimal getTotalApostado() { return totalApostado; }</span>
+<span class="nc" id="L207">        public BigDecimal getTotalGanho() { return totalGanho; }</span>
+        public double getPercentualVitorias() { 
+<span class="nc bnc" id="L209" title="All 2 branches missed.">            return totalPartidas &gt; 0 ? (double) vitorias / totalPartidas * 100 : 0; </span>
+        }
+        public BigDecimal getLucroLiquido() { 
+<span class="nc" id="L212">            return totalGanho.subtract(totalApostado); </span>
+        }
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

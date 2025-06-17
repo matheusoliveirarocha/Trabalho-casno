@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JogadaRoletaDTO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cassino Online Microservice</a> &gt; <a href="index.source.html" class="el_package">com.cassino.online.dto</a> &gt; <span class="el_source">JogadaRoletaDTO.java</span></div><h1>JogadaRoletaDTO.java</h1><pre class="source lang-java linenums">package com.cassino.online.dto;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+
+/**
+ * DTO para jogada na Roleta
+ */
+public class JogadaRoletaDTO {
+
+    @NotNull(message = &quot;O número apostado é obrigatório&quot;)
+    @Min(value = 0, message = &quot;O número deve ser entre 0 e 36&quot;)
+    @Max(value = 36, message = &quot;O número deve ser entre 0 e 36&quot;)
+    private Integer numeroApostado;
+
+    private String tipoAposta; // &quot;NUMERO&quot;, &quot;COR&quot;, &quot;PAR_IMPAR&quot;
+    private String cor; // &quot;VERMELHO&quot;, &quot;PRETO&quot; (para apostas de cor)
+    private String parImpar; // &quot;PAR&quot;, &quot;IMPAR&quot; (para apostas par/ímpar)
+
+    // Construtores
+<span class="fc" id="L22">    public JogadaRoletaDTO() {</span>
+<span class="fc" id="L23">    }</span>
+
+<span class="nc" id="L25">    public JogadaRoletaDTO(Integer numeroApostado) {</span>
+<span class="nc" id="L26">        this.numeroApostado = numeroApostado;</span>
+<span class="nc" id="L27">        this.tipoAposta = &quot;NUMERO&quot;;</span>
+<span class="nc" id="L28">    }</span>
+
+    // Getters e Setters
+    public Integer getNumeroApostado() {
+<span class="fc" id="L32">        return numeroApostado;</span>
+    }
+
+    public void setNumeroApostado(Integer numeroApostado) {
+<span class="fc" id="L36">        this.numeroApostado = numeroApostado;</span>
+<span class="fc" id="L37">    }</span>
+
+    public String getTipoAposta() {
+<span class="fc" id="L40">        return tipoAposta;</span>
+    }
+
+    public void setTipoAposta(String tipoAposta) {
+<span class="fc" id="L44">        this.tipoAposta = tipoAposta;</span>
+<span class="fc" id="L45">    }</span>
+
+    public String getCor() {
+<span class="fc" id="L48">        return cor;</span>
+    }
+
+    public void setCor(String cor) {
+<span class="fc" id="L52">        this.cor = cor;</span>
+<span class="fc" id="L53">    }</span>
+
+    public String getParImpar() {
+<span class="fc" id="L56">        return parImpar;</span>
+    }
+
+    public void setParImpar(String parImpar) {
+<span class="fc" id="L60">        this.parImpar = parImpar;</span>
+<span class="fc" id="L61">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

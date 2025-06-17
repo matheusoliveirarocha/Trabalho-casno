@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoletaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cassino Online Microservice</a> &gt; <a href="index.source.html" class="el_package">com.cassino.online.controller</a> &gt; <span class="el_source">RoletaController.java</span></div><h1>RoletaController.java</h1><pre class="source lang-java linenums">package com.cassino.online.controller;
+
+import com.cassino.online.dto.JogadaRoletaDTO;
+import com.cassino.online.service.RoletaService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+/**
+ * Controlador REST para o jogo Roleta
+ */
+@RestController
+@RequestMapping(&quot;/api/jogos/roleta&quot;)
+@Tag(name = &quot;Roleta&quot;, description = &quot;API para o jogo Roleta&quot;)
+@CrossOrigin(origins = &quot;*&quot;)
+public class RoletaController {
+
+    private final RoletaService roletaService;
+
+    @Autowired
+<span class="nc" id="L27">    public RoletaController(RoletaService roletaService) {</span>
+<span class="nc" id="L28">        this.roletaService = roletaService;</span>
+<span class="nc" id="L29">    }</span>
+
+    /**
+     * Jogar na Roleta
+     */
+    @PostMapping(&quot;/jogar/{partidaId}&quot;)
+    @Operation(summary = &quot;Jogar Roleta&quot;, description = &quot;Executa uma jogada na Roleta com número, cor ou par/ímpar&quot;)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Jogada executada com sucesso&quot;),
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Dados da jogada inválidos&quot;),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Partida não encontrada&quot;)
+    })
+    public ResponseEntity&lt;?&gt; jogarRoleta(
+            @Parameter(description = &quot;ID da partida&quot;) @PathVariable Long partidaId,
+            @Valid @RequestBody JogadaRoletaDTO jogada) {
+        try {
+<span class="nc" id="L45">            RoletaService.ResultadoRoleta resultado = roletaService.jogarRoleta(partidaId, jogada);</span>
+<span class="nc" id="L46">            return ResponseEntity.ok(resultado);</span>
+<span class="nc" id="L47">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L48">            return ResponseEntity.badRequest().body(new ErrorResponse(&quot;Erro na jogada&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Classe interna para respostas de erro
+     */
+    public static class ErrorResponse {
+        private String erro;
+        private String mensagem;
+
+<span class="nc" id="L59">        public ErrorResponse(String erro, String mensagem) {</span>
+<span class="nc" id="L60">            this.erro = erro;</span>
+<span class="nc" id="L61">            this.mensagem = mensagem;</span>
+<span class="nc" id="L62">        }</span>
+
+        public String getErro() {
+<span class="nc" id="L65">            return erro;</span>
+        }
+
+        public void setErro(String erro) {
+<span class="nc" id="L69">            this.erro = erro;</span>
+<span class="nc" id="L70">        }</span>
+
+        public String getMensagem() {
+<span class="nc" id="L73">            return mensagem;</span>
+        }
+
+        public void setMensagem(String mensagem) {
+<span class="nc" id="L77">            this.mensagem = mensagem;</span>
+<span class="nc" id="L78">        }</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

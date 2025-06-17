@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StatusPartida.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cassino Online Microservice</a> &gt; <a href="index.source.html" class="el_package">com.cassino.online.enums</a> &gt; <span class="el_source">StatusPartida.java</span></div><h1>StatusPartida.java</h1><pre class="source lang-java linenums">package com.cassino.online.enums;
+
+/**
+ * Enum para o status de uma partida
+ */
+<span class="fc" id="L6">public enum StatusPartida {</span>
+<span class="fc" id="L7">    EM_ANDAMENTO(&quot;Em Andamento&quot;),</span>
+<span class="fc" id="L8">    VITORIA(&quot;Vitória&quot;),</span>
+<span class="fc" id="L9">    DERROTA(&quot;Derrota&quot;),</span>
+<span class="fc" id="L10">    EMPATE(&quot;Empate&quot;),</span>
+<span class="fc" id="L11">    CANCELADA(&quot;Cancelada&quot;);</span>
+
+    private final String descricao;
+
+<span class="fc" id="L15">    StatusPartida(String descricao) {</span>
+<span class="fc" id="L16">        this.descricao = descricao;</span>
+<span class="fc" id="L17">    }</span>
+
+    public String getDescricao() {
+<span class="nc" id="L20">        return descricao;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

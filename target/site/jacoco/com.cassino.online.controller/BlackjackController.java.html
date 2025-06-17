@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BlackjackController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cassino Online Microservice</a> &gt; <a href="index.source.html" class="el_package">com.cassino.online.controller</a> &gt; <span class="el_source">BlackjackController.java</span></div><h1>BlackjackController.java</h1><pre class="source lang-java linenums">package com.cassino.online.controller;
+
+import com.cassino.online.dto.JogadaBlackjackDTO;
+import com.cassino.online.service.BlackjackService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+/**
+ * Controlador REST para o jogo Blackjack
+ */
+@RestController
+@RequestMapping(&quot;/api/jogos/blackjack&quot;)
+@Tag(name = &quot;Blackjack&quot;, description = &quot;API para o jogo Blackjack&quot;)
+@CrossOrigin(origins = &quot;*&quot;)
+public class BlackjackController {
+
+    private final BlackjackService blackjackService;
+
+    @Autowired
+<span class="nc" id="L26">    public BlackjackController(BlackjackService blackjackService) {</span>
+<span class="nc" id="L27">        this.blackjackService = blackjackService;</span>
+<span class="nc" id="L28">    }</span>
+
+    /**
+     * Iniciar uma partida de Blackjack
+     */
+    @PostMapping(&quot;/iniciar/{partidaId}&quot;)
+    @Operation(summary = &quot;Iniciar Blackjack&quot;, description = &quot;Inicia uma partida de Blackjack distribuindo as cartas iniciais&quot;)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Blackjack iniciado com sucesso&quot;),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Partida não encontrada&quot;)
+    })
+    public ResponseEntity&lt;?&gt; iniciarBlackjack(
+            @Parameter(description = &quot;ID da partida&quot;) @PathVariable Long partidaId) {
+        try {
+<span class="nc" id="L42">            BlackjackService.EstadoBlackjack estado = blackjackService.iniciarBlackjack(partidaId);</span>
+<span class="nc" id="L43">            return ResponseEntity.ok(estado);</span>
+<span class="nc" id="L44">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L45">            return ResponseEntity.notFound().build();</span>
+        }
+    }
+
+    /**
+     * Fazer uma jogada no Blackjack
+     */
+    @PostMapping(&quot;/jogar/{partidaId}&quot;)
+    @Operation(summary = &quot;Jogar Blackjack&quot;, description = &quot;Executa uma jogada no Blackjack (HIT, STAND, DOUBLE)&quot;)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Jogada executada com sucesso&quot;),
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Jogada inválida&quot;),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Partida não encontrada&quot;)
+    })
+    public ResponseEntity&lt;?&gt; jogarBlackjack(
+            @Parameter(description = &quot;ID da partida&quot;) @PathVariable Long partidaId,
+            @RequestBody JogadaBlackjackDTO jogada) {
+        try {
+<span class="nc" id="L63">            BlackjackService.EstadoBlackjack estado = blackjackService.jogarBlackjack(partidaId, jogada);</span>
+<span class="nc" id="L64">            return ResponseEntity.ok(estado);</span>
+<span class="nc" id="L65">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L66">            return ResponseEntity.badRequest().body(new ErrorResponse(&quot;Erro na jogada&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Classe interna para respostas de erro
+     */
+    public static class ErrorResponse {
+        private String erro;
+        private String mensagem;
+
+<span class="nc" id="L77">        public ErrorResponse(String erro, String mensagem) {</span>
+<span class="nc" id="L78">            this.erro = erro;</span>
+<span class="nc" id="L79">            this.mensagem = mensagem;</span>
+<span class="nc" id="L80">        }</span>
+
+        public String getErro() {
+<span class="nc" id="L83">            return erro;</span>
+        }
+
+        public void setErro(String erro) {
+<span class="nc" id="L87">            this.erro = erro;</span>
+<span class="nc" id="L88">        }</span>
+
+        public String getMensagem() {
+<span class="nc" id="L91">            return mensagem;</span>
+        }
+
+        public void setMensagem(String mensagem) {
+<span class="nc" id="L95">            this.mensagem = mensagem;</span>
+<span class="nc" id="L96">        }</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

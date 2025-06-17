@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PartidaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cassino Online Microservice</a> &gt; <a href="index.source.html" class="el_package">com.cassino.online.controller</a> &gt; <span class="el_source">PartidaController.java</span></div><h1>PartidaController.java</h1><pre class="source lang-java linenums">package com.cassino.online.controller;
+
+import com.cassino.online.dto.IniciarPartidaDTO;
+import com.cassino.online.enums.TipoJogo;
+import com.cassino.online.model.Partida;
+import com.cassino.online.service.PartidaService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Controlador REST para gerenciamento de partidas do cassino
+ */
+@RestController
+@RequestMapping(&quot;/api/partidas&quot;)
+@Tag(name = &quot;Partidas&quot;, description = &quot;API para gerenciamento de partidas do cassino online&quot;)
+@CrossOrigin(origins = &quot;*&quot;)
+public class PartidaController {
+
+    private final PartidaService partidaService;
+
+    @Autowired
+<span class="nc" id="L35">    public PartidaController(PartidaService partidaService) {</span>
+<span class="nc" id="L36">        this.partidaService = partidaService;</span>
+<span class="nc" id="L37">    }</span>
+
+    /**
+     * Iniciar uma nova partida
+     */
+    @PostMapping
+    @Operation(summary = &quot;Iniciar nova partida&quot;, description = &quot;Inicia uma nova partida no cassino&quot;)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = &quot;201&quot;, description = &quot;Partida criada com sucesso&quot;),
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Dados inválidos fornecidos&quot;),
+            @ApiResponse(responseCode = &quot;409&quot;, description = &quot;Jogador já possui partida em andamento&quot;)
+    })
+    public ResponseEntity&lt;?&gt; iniciarPartida(@Valid @RequestBody IniciarPartidaDTO iniciarPartidaDTO) {
+        try {
+<span class="nc" id="L51">            Partida novaPartida = partidaService.iniciarPartida(iniciarPartidaDTO);</span>
+<span class="nc" id="L52">            return ResponseEntity.status(HttpStatus.CREATED).body(novaPartida);</span>
+<span class="nc" id="L53">        } catch (IllegalStateException e) {</span>
+<span class="nc" id="L54">            return ResponseEntity.status(HttpStatus.CONFLICT)</span>
+<span class="nc" id="L55">                    .body(new ErrorResponse(&quot;Erro ao iniciar partida&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Listar todas as partidas
+     */
+    @GetMapping
+    @Operation(summary = &quot;Listar todas as partidas&quot;, description = &quot;Retorna uma lista com todas as partidas do cassino&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Lista de partidas retornada com sucesso&quot;)
+    public ResponseEntity&lt;List&lt;Partida&gt;&gt; listarTodasPartidas() {
+<span class="nc" id="L66">        List&lt;Partida&gt; partidas = partidaService.listarTodasPartidas();</span>
+<span class="nc" id="L67">        return ResponseEntity.ok(partidas);</span>
+    }
+
+    /**
+     * Buscar partida por ID
+     */
+    @GetMapping(&quot;/{id}&quot;)
+    @Operation(summary = &quot;Buscar partida por ID&quot;, description = &quot;Retorna uma partida específica pelo seu ID&quot;)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Partida encontrada&quot;),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Partida não encontrada&quot;)
+    })
+    public ResponseEntity&lt;?&gt; buscarPartidaPorId(
+            @Parameter(description = &quot;ID da partida&quot;) @PathVariable Long id) {
+<span class="nc" id="L81">        Optional&lt;Partida&gt; partida = partidaService.buscarPartidaPorId(id);</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (partida.isPresent()) {</span>
+<span class="nc" id="L83">            return ResponseEntity.ok(partida.get());</span>
+        } else {
+<span class="nc" id="L85">            return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="nc" id="L86">                    .body(new ErrorResponse(&quot;Partida não encontrada&quot;, &quot;Nenhuma partida encontrada com ID: &quot; + id));</span>
+        }
+    }
+
+    /**
+     * Buscar partidas por jogador
+     */
+    @GetMapping(&quot;/jogador/{nomeJogador}&quot;)
+    @Operation(summary = &quot;Buscar partidas por jogador&quot;, description = &quot;Retorna todas as partidas de um jogador específico&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Lista de partidas do jogador retornada com sucesso&quot;)
+    public ResponseEntity&lt;List&lt;Partida&gt;&gt; buscarPartidasPorJogador(
+            @Parameter(description = &quot;Nome do jogador&quot;) @PathVariable String nomeJogador) {
+<span class="nc" id="L98">        List&lt;Partida&gt; partidas = partidaService.buscarPartidasPorJogador(nomeJogador);</span>
+<span class="nc" id="L99">        return ResponseEntity.ok(partidas);</span>
+    }
+
+    /**
+     * Buscar partidas por tipo de jogo
+     */
+    @GetMapping(&quot;/tipo/{tipoJogo}&quot;)
+    @Operation(summary = &quot;Buscar partidas por tipo de jogo&quot;, description = &quot;Retorna todas as partidas de um tipo específico de jogo&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Lista de partidas do tipo de jogo retornada com sucesso&quot;)
+    public ResponseEntity&lt;List&lt;Partida&gt;&gt; buscarPartidasPorTipo(
+            @Parameter(description = &quot;Tipo de jogo&quot;) @PathVariable TipoJogo tipoJogo) {
+<span class="nc" id="L110">        List&lt;Partida&gt; partidas = partidaService.buscarPartidasPorTipo(tipoJogo);</span>
+<span class="nc" id="L111">        return ResponseEntity.ok(partidas);</span>
+    }
+
+    /**
+     * Buscar partidas em andamento
+     */
+    @GetMapping(&quot;/em-andamento&quot;)
+    @Operation(summary = &quot;Buscar partidas em andamento&quot;, description = &quot;Retorna todas as partidas que estão em andamento&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Lista de partidas em andamento retornada com sucesso&quot;)
+    public ResponseEntity&lt;List&lt;Partida&gt;&gt; buscarPartidasEmAndamento() {
+<span class="nc" id="L121">        List&lt;Partida&gt; partidas = partidaService.buscarPartidasEmAndamento();</span>
+<span class="nc" id="L122">        return ResponseEntity.ok(partidas);</span>
+    }
+
+    /**
+     * Cancelar uma partida
+     */
+    @DeleteMapping(&quot;/{id}&quot;)
+    @Operation(summary = &quot;Cancelar partida&quot;, description = &quot;Cancela uma partida em andamento&quot;)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = &quot;204&quot;, description = &quot;Partida cancelada com sucesso&quot;),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Partida não encontrada&quot;),
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Partida não pode ser cancelada&quot;)
+    })
+    public ResponseEntity&lt;?&gt; cancelarPartida(
+            @Parameter(description = &quot;ID da partida&quot;) @PathVariable Long id) {
+        try {
+<span class="nc" id="L138">            partidaService.cancelarPartida(id);</span>
+<span class="nc" id="L139">            return ResponseEntity.noContent().build();</span>
+<span class="nc" id="L140">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L141">            return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="nc" id="L142">                    .body(new ErrorResponse(&quot;Partida não encontrada&quot;, e.getMessage()));</span>
+<span class="nc" id="L143">        } catch (IllegalStateException e) {</span>
+<span class="nc" id="L144">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L145">                    .body(new ErrorResponse(&quot;Erro ao cancelar partida&quot;, e.getMessage()));</span>
+        }
+    }
+
+    /**
+     * Buscar histórico de um jogador
+     */
+    @GetMapping(&quot;/historico/{nomeJogador}&quot;)
+    @Operation(summary = &quot;Buscar histórico do jogador&quot;, description = &quot;Retorna o histórico de partidas finalizadas de um jogador&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Histórico do jogador retornado com sucesso&quot;)
+    public ResponseEntity&lt;List&lt;Partida&gt;&gt; buscarHistoricoJogador(
+            @Parameter(description = &quot;Nome do jogador&quot;) @PathVariable String nomeJogador) {
+<span class="nc" id="L157">        List&lt;Partida&gt; historico = partidaService.buscarHistoricoJogador(nomeJogador);</span>
+<span class="nc" id="L158">        return ResponseEntity.ok(historico);</span>
+    }
+
+    /**
+     * Buscar partidas por período
+     */
+    @GetMapping(&quot;/periodo&quot;)
+    @Operation(summary = &quot;Buscar partidas por período&quot;, description = &quot;Retorna partidas dentro de um período específico&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Lista de partidas do período retornada com sucesso&quot;)
+    public ResponseEntity&lt;List&lt;Partida&gt;&gt; buscarPartidasPorPeriodo(
+            @Parameter(description = &quot;Data de início&quot;) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
+            @Parameter(description = &quot;Data de fim&quot;) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim) {
+<span class="nc" id="L170">        List&lt;Partida&gt; partidas = partidaService.buscarPartidasPorPeriodo(dataInicio, dataFim);</span>
+<span class="nc" id="L171">        return ResponseEntity.ok(partidas);</span>
+    }
+
+    /**
+     * Buscar estatísticas de um jogador
+     */
+    @GetMapping(&quot;/estatisticas/{nomeJogador}&quot;)
+    @Operation(summary = &quot;Buscar estatísticas do jogador&quot;, description = &quot;Retorna estatísticas detalhadas de um jogador&quot;)
+    @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Estatísticas do jogador retornadas com sucesso&quot;)
+    public ResponseEntity&lt;PartidaService.EstatisticasJogadorDTO&gt; buscarEstatisticasJogador(
+            @Parameter(description = &quot;Nome do jogador&quot;) @PathVariable String nomeJogador) {
+<span class="nc" id="L182">        PartidaService.EstatisticasJogadorDTO estatisticas = partidaService.calcularEstatisticasJogador(nomeJogador);</span>
+<span class="nc" id="L183">        return ResponseEntity.ok(estatisticas);</span>
+    }
+
+    /**
+     * Classe interna para respostas de erro
+     */
+    public static class ErrorResponse {
+        private String erro;
+        private String mensagem;
+
+<span class="nc" id="L193">        public ErrorResponse(String erro, String mensagem) {</span>
+<span class="nc" id="L194">            this.erro = erro;</span>
+<span class="nc" id="L195">            this.mensagem = mensagem;</span>
+<span class="nc" id="L196">        }</span>
+
+        public String getErro() {
+<span class="nc" id="L199">            return erro;</span>
+        }
+
+        public void setErro(String erro) {
+<span class="nc" id="L203">            this.erro = erro;</span>
+<span class="nc" id="L204">        }</span>
+
+        public String getMensagem() {
+<span class="nc" id="L207">            return mensagem;</span>
+        }
+
+        public void setMensagem(String mensagem) {
+<span class="nc" id="L211">            this.mensagem = mensagem;</span>
+<span class="nc" id="L212">        }</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

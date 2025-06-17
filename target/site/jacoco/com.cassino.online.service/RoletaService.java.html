@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoletaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cassino Online Microservice</a> &gt; <a href="index.source.html" class="el_package">com.cassino.online.service</a> &gt; <span class="el_source">RoletaService.java</span></div><h1>RoletaService.java</h1><pre class="source lang-java linenums">package com.cassino.online.service;
+
+import com.cassino.online.dto.JogadaRoletaDTO;
+import com.cassino.online.dto.ResultadoPartidaDTO;
+import com.cassino.online.enums.StatusPartida;
+import com.cassino.online.model.Partida;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
+/**
+ * Serviço para o jogo Roleta
+ */
+@Service
+public class RoletaService {
+
+    private final PartidaService partidaService;
+<span class="fc" id="L22">    private final Random random = new Random();</span>
+
+    // Números vermelhos na roleta europeia
+<span class="fc" id="L25">    private static final List&lt;Integer&gt; NUMEROS_VERMELHOS = Arrays.asList(</span>
+<span class="fc" id="L26">            1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36</span>
+    );
+
+    @Autowired
+<span class="fc" id="L30">    public RoletaService(PartidaService partidaService) {</span>
+<span class="fc" id="L31">        this.partidaService = partidaService;</span>
+<span class="fc" id="L32">    }</span>
+
+    /**
+     * Joga na roleta
+     */
+    public ResultadoRoleta jogarRoleta(Long partidaId, JogadaRoletaDTO jogada) {
+<span class="fc" id="L38">        Partida partida = partidaService.buscarPartidaPorId(partidaId)</span>
+<span class="fc" id="L39">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Partida não encontrada&quot;));</span>
+
+        // Gira a roleta
+<span class="fc" id="L42">        int numeroSorteado = random.nextInt(37); // 0 a 36</span>
+
+        // Determina cor do número sorteado
+<span class="fc" id="L45">        String corSorteada = determinarCor(numeroSorteado);</span>
+<span class="pc bpc" id="L46" title="1 of 4 branches missed.">        String parImparSorteado = numeroSorteado == 0 ? &quot;ZERO&quot; : (numeroSorteado % 2 == 0 ? &quot;PAR&quot; : &quot;IMPAR&quot;);</span>
+
+        // Verifica se ganhou
+<span class="fc" id="L49">        boolean ganhou = false;</span>
+<span class="fc" id="L50">        BigDecimal multiplicador = BigDecimal.ONE;</span>
+
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (&quot;NUMERO&quot;.equals(jogada.getTipoAposta())) {</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">            ganhou = numeroSorteado == jogada.getNumeroApostado();</span>
+<span class="fc" id="L54">            multiplicador = BigDecimal.valueOf(35); // Paga 35:1</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        } else if (&quot;COR&quot;.equals(jogada.getTipoAposta())) {</span>
+<span class="fc" id="L56">            ganhou = corSorteada.equals(jogada.getCor());</span>
+<span class="fc" id="L57">            multiplicador = BigDecimal.valueOf(1); // Paga 1:1</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        } else if (&quot;PAR_IMPAR&quot;.equals(jogada.getTipoAposta())) {</span>
+<span class="fc" id="L59">            ganhou = parImparSorteado.equals(jogada.getParImpar());</span>
+<span class="fc" id="L60">            multiplicador = BigDecimal.valueOf(1); // Paga 1:1</span>
+        }
+
+        // Calcula resultado
+        StatusPartida status;
+<span class="fc" id="L65">        BigDecimal valorGanho = BigDecimal.ZERO;</span>
+        String resultado;
+
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (ganhou) {</span>
+<span class="nc" id="L69">            status = StatusPartida.VITORIA;</span>
+<span class="nc" id="L70">            valorGanho = partida.getValorAposta().multiply(multiplicador.add(BigDecimal.ONE)); // Inclui a aposta original</span>
+<span class="nc" id="L71">            resultado = String.format(&quot;Número sorteado: %d (%s, %s). Você ganhou!&quot;, </span>
+<span class="nc" id="L72">                    numeroSorteado, corSorteada, parImparSorteado);</span>
+        } else {
+<span class="fc" id="L74">            status = StatusPartida.DERROTA;</span>
+<span class="fc" id="L75">            resultado = String.format(&quot;Número sorteado: %d (%s, %s). Você perdeu.&quot;, </span>
+<span class="fc" id="L76">                    numeroSorteado, corSorteada, parImparSorteado);</span>
+        }
+
+        // Finaliza a partida
+<span class="fc" id="L80">        ResultadoPartidaDTO resultadoPartida = partidaService.finalizarPartida(partidaId, status, valorGanho, resultado);</span>
+
+<span class="fc" id="L82">        return new ResultadoRoleta(</span>
+                numeroSorteado,
+                corSorteada,
+                parImparSorteado,
+                ganhou,
+                resultadoPartida
+        );
+    }
+
+    /**
+     * Determina a cor de um número na roleta
+     */
+    private String determinarCor(int numero) {
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        if (numero == 0) {</span>
+<span class="nc" id="L96">            return &quot;VERDE&quot;;</span>
+        }
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        return NUMEROS_VERMELHOS.contains(numero) ? &quot;VERMELHO&quot; : &quot;PRETO&quot;;</span>
+    }
+
+    /**
+     * Classe para resultado da roleta
+     */
+    public static class ResultadoRoleta {
+        private int numeroSorteado;
+        private String cor;
+        private String parImpar;
+        private boolean ganhou;
+        private ResultadoPartidaDTO resultadoPartida;
+
+<span class="fc" id="L111">        public ResultadoRoleta(int numeroSorteado, String cor, String parImpar, boolean ganhou, ResultadoPartidaDTO resultadoPartida) {</span>
+<span class="fc" id="L112">            this.numeroSorteado = numeroSorteado;</span>
+<span class="fc" id="L113">            this.cor = cor;</span>
+<span class="fc" id="L114">            this.parImpar = parImpar;</span>
+<span class="fc" id="L115">            this.ganhou = ganhou;</span>
+<span class="fc" id="L116">            this.resultadoPartida = resultadoPartida;</span>
+<span class="fc" id="L117">        }</span>
+
+        // Getters
+<span class="fc" id="L120">        public int getNumeroSorteado() { return numeroSorteado; }</span>
+<span class="fc" id="L121">        public String getCor() { return cor; }</span>
+<span class="fc" id="L122">        public String getParImpar() { return parImpar; }</span>
+<span class="nc" id="L123">        public boolean isGanhou() { return ganhou; }</span>
+<span class="nc" id="L124">        public ResultadoPartidaDTO getResultadoPartida() { return resultadoPartida; }</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

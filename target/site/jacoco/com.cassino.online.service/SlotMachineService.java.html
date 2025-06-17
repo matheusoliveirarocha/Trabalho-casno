@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SlotMachineService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cassino Online Microservice</a> &gt; <a href="index.source.html" class="el_package">com.cassino.online.service</a> &gt; <span class="el_source">SlotMachineService.java</span></div><h1>SlotMachineService.java</h1><pre class="source lang-java linenums">package com.cassino.online.service;
+
+import com.cassino.online.dto.ResultadoPartidaDTO;
+import com.cassino.online.enums.StatusPartida;
+import com.cassino.online.model.Partida;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
+/**
+ * Serviço para o jogo Slot Machine (Caça-níqueis)
+ */
+@Service
+public class SlotMachineService {
+
+    private final PartidaService partidaService;
+<span class="fc" id="L21">    private final Random random = new Random();</span>
+
+    // Símbolos da slot machine
+<span class="fc" id="L24">    private static final List&lt;String&gt; SIMBOLOS = Arrays.asList(</span>
+            &quot;🍒&quot;, &quot;🍋&quot;, &quot;🍊&quot;, &quot;🍇&quot;, &quot;⭐&quot;, &quot;💎&quot;, &quot;🔔&quot;, &quot;7️⃣&quot;
+    );
+
+    // Multiplicadores por símbolo (quanto mais raro, maior o multiplicador)
+<span class="fc" id="L29">    private static final BigDecimal[] MULTIPLICADORES = {</span>
+<span class="fc" id="L30">            BigDecimal.valueOf(2),   // 🍒</span>
+<span class="fc" id="L31">            BigDecimal.valueOf(3),   // 🍋</span>
+<span class="fc" id="L32">            BigDecimal.valueOf(4),   // 🍊</span>
+<span class="fc" id="L33">            BigDecimal.valueOf(5),   // 🍇</span>
+<span class="fc" id="L34">            BigDecimal.valueOf(10),  // ⭐</span>
+<span class="fc" id="L35">            BigDecimal.valueOf(20),  // 💎</span>
+<span class="fc" id="L36">            BigDecimal.valueOf(50),  // 🔔</span>
+<span class="fc" id="L37">            BigDecimal.valueOf(100)  // 7️⃣</span>
+    };
+
+    @Autowired
+<span class="fc" id="L41">    public SlotMachineService(PartidaService partidaService) {</span>
+<span class="fc" id="L42">        this.partidaService = partidaService;</span>
+<span class="fc" id="L43">    }</span>
+
+    /**
+     * Joga na slot machine
+     */
+    public ResultadoSlotMachine jogarSlotMachine(Long partidaId) {
+<span class="fc" id="L49">        Partida partida = partidaService.buscarPartidaPorId(partidaId)</span>
+<span class="fc" id="L50">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Partida não encontrada&quot;));</span>
+
+        // Gira os 3 rolos
+<span class="fc" id="L53">        String[] resultado = new String[3];</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        for (int i = 0; i &lt; 3; i++) {</span>
+<span class="fc" id="L55">            resultado[i] = sortearSimbolo();</span>
+        }
+
+        // Verifica combinações vencedoras
+<span class="fc" id="L59">        CombinacaoVencedora combinacao = verificarCombinacao(resultado);</span>
+        
+        StatusPartida status;
+<span class="fc" id="L62">        BigDecimal valorGanho = BigDecimal.ZERO;</span>
+        String descricaoResultado;
+
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (combinacao.isVencedora()) {</span>
+<span class="fc" id="L66">            status = StatusPartida.VITORIA;</span>
+<span class="fc" id="L67">            valorGanho = partida.getValorAposta().multiply(combinacao.getMultiplicador());</span>
+<span class="fc" id="L68">            descricaoResultado = String.format(&quot;Combinação vencedora: %s %s %s - Multiplicador: %sx&quot;, </span>
+<span class="fc" id="L69">                    resultado[0], resultado[1], resultado[2], combinacao.getMultiplicador());</span>
+        } else {
+<span class="fc" id="L71">            status = StatusPartida.DERROTA;</span>
+<span class="fc" id="L72">            descricaoResultado = String.format(&quot;Sem combinação vencedora: %s %s %s&quot;, </span>
+                    resultado[0], resultado[1], resultado[2]);
+        }
+
+        // Finaliza a partida
+<span class="fc" id="L77">        ResultadoPartidaDTO resultadoPartida = partidaService.finalizarPartida(partidaId, status, valorGanho, descricaoResultado);</span>
+
+<span class="fc" id="L79">        return new ResultadoSlotMachine(</span>
+                resultado,
+<span class="fc" id="L81">                combinacao.isVencedora(),</span>
+<span class="fc" id="L82">                combinacao.getMultiplicador(),</span>
+<span class="fc" id="L83">                combinacao.getTipoCombinacao(),</span>
+                resultadoPartida
+        );
+    }
+
+    /**
+     * Sorteia um símbolo baseado em probabilidades
+     */
+    private String sortearSimbolo() {
+        // Probabilidades diferentes para cada símbolo (símbolos mais valiosos são mais raros)
+<span class="fc" id="L93">        int[] probabilidades = {30, 25, 20, 15, 5, 3, 1, 1}; // Total: 100</span>
+<span class="fc" id="L94">        int sorteio = random.nextInt(100);</span>
+        
+<span class="fc" id="L96">        int acumulado = 0;</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        for (int i = 0; i &lt; SIMBOLOS.size(); i++) {</span>
+<span class="fc" id="L98">            acumulado += probabilidades[i];</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">            if (sorteio &lt; acumulado) {</span>
+<span class="fc" id="L100">                return SIMBOLOS.get(i);</span>
+            }
+        }
+        
+<span class="nc" id="L104">        return SIMBOLOS.get(0); // Fallback</span>
+    }
+
+    /**
+     * Verifica se há combinação vencedora
+     */
+    private CombinacaoVencedora verificarCombinacao(String[] resultado) {
+        // Três símbolos iguais
+<span class="pc bpc" id="L112" title="1 of 4 branches missed.">        if (resultado[0].equals(resultado[1]) &amp;&amp; resultado[1].equals(resultado[2])) {</span>
+<span class="nc" id="L113">            int indice = SIMBOLOS.indexOf(resultado[0]);</span>
+<span class="nc" id="L114">            return new CombinacaoVencedora(true, MULTIPLICADORES[indice], &quot;TRÊS IGUAIS&quot;);</span>
+        }
+        
+        // Dois símbolos iguais
+<span class="pc bpc" id="L118" title="2 of 6 branches missed.">        if (resultado[0].equals(resultado[1]) || resultado[1].equals(resultado[2]) || resultado[0].equals(resultado[2])) {</span>
+            // Pega o símbolo que se repete
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">            String simboloRepetido = resultado[0].equals(resultado[1]) ? resultado[0] : </span>
+<span class="pc bnc" id="L121" title="All 2 branches missed.">                                   resultado[1].equals(resultado[2]) ? resultado[1] : resultado[0];</span>
+<span class="fc" id="L122">            int indice = SIMBOLOS.indexOf(simboloRepetido);</span>
+<span class="fc" id="L123">            BigDecimal multiplicadorReduzido = MULTIPLICADORES[indice].divide(BigDecimal.valueOf(3), 2, java.math.RoundingMode.HALF_UP);</span>
+<span class="fc" id="L124">            return new CombinacaoVencedora(true, multiplicadorReduzido, &quot;DOIS IGUAIS&quot;);</span>
+        }
+        
+        // Combinação especial: qualquer combinação com 7️⃣
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        for (String simbolo : resultado) {</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">            if (&quot;7️⃣&quot;.equals(simbolo)) {</span>
+<span class="nc" id="L130">                return new CombinacaoVencedora(true, BigDecimal.valueOf(2), &quot;SORTE COM 7&quot;);</span>
+            }
+        }
+
+<span class="fc" id="L134">        return new CombinacaoVencedora(false, BigDecimal.ZERO, &quot;SEM COMBINAÇÃO&quot;);</span>
+    }
+
+    /**
+     * Classe para representar uma combinação vencedora
+     */
+    private static class CombinacaoVencedora {
+        private boolean vencedora;
+        private BigDecimal multiplicador;
+        private String tipoCombinacao;
+
+<span class="fc" id="L145">        public CombinacaoVencedora(boolean vencedora, BigDecimal multiplicador, String tipoCombinacao) {</span>
+<span class="fc" id="L146">            this.vencedora = vencedora;</span>
+<span class="fc" id="L147">            this.multiplicador = multiplicador;</span>
+<span class="fc" id="L148">            this.tipoCombinacao = tipoCombinacao;</span>
+<span class="fc" id="L149">        }</span>
+
+<span class="fc" id="L151">        public boolean isVencedora() { return vencedora; }</span>
+<span class="fc" id="L152">        public BigDecimal getMultiplicador() { return multiplicador; }</span>
+<span class="fc" id="L153">        public String getTipoCombinacao() { return tipoCombinacao; }</span>
+    }
+
+    /**
+     * Classe para resultado da slot machine
+     */
+    public static class ResultadoSlotMachine {
+        private String[] simbolos;
+        private boolean ganhou;
+        private BigDecimal multiplicador;
+        private String tipoCombinacao;
+        private ResultadoPartidaDTO resultadoPartida;
+
+        public ResultadoSlotMachine(String[] simbolos, boolean ganhou, BigDecimal multiplicador, 
+<span class="fc" id="L167">                                   String tipoCombinacao, ResultadoPartidaDTO resultadoPartida) {</span>
+<span class="fc" id="L168">            this.simbolos = simbolos;</span>
+<span class="fc" id="L169">            this.ganhou = ganhou;</span>
+<span class="fc" id="L170">            this.multiplicador = multiplicador;</span>
+<span class="fc" id="L171">            this.tipoCombinacao = tipoCombinacao;</span>
+<span class="fc" id="L172">            this.resultadoPartida = resultadoPartida;</span>
+<span class="fc" id="L173">        }</span>
+
+        // Getters
+<span class="fc" id="L176">        public String[] getSimbolos() { return simbolos; }</span>
+<span class="fc" id="L177">        public boolean isGanhou() { return ganhou; }</span>
+<span class="fc" id="L178">        public BigDecimal getMultiplicador() { return multiplicador; }</span>
+<span class="fc" id="L179">        public String getTipoCombinacao() { return tipoCombinacao; }</span>
+<span class="nc" id="L180">        public ResultadoPartidaDTO getResultadoPartida() { return resultadoPartida; }</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

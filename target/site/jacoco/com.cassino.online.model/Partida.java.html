@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Partida.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Cassino Online Microservice</a> &gt; <a href="index.source.html" class="el_package">com.cassino.online.model</a> &gt; <span class="el_source">Partida.java</span></div><h1>Partida.java</h1><pre class="source lang-java linenums">package com.cassino.online.model;
+
+import com.cassino.online.enums.TipoJogo;
+import com.cassino.online.enums.StatusPartida;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Objects;
+
+/**
+ * Entidade JPA que representa uma Partida no cassino
+ */
+@Entity
+@Table(name = &quot;partidas&quot;)
+public class Partida {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotNull(message = &quot;O nome do jogador é obrigatório&quot;)
+    @Size(min = 2, max = 50, message = &quot;O nome do jogador deve ter entre 2 e 50 caracteres&quot;)
+    @Column(name = &quot;nome_jogador&quot;, nullable = false, length = 50)
+    private String nomeJogador;
+
+    @NotNull(message = &quot;O tipo de jogo é obrigatório&quot;)
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;tipo_jogo&quot;, nullable = false)
+    private TipoJogo tipoJogo;
+
+    @NotNull(message = &quot;O valor da aposta é obrigatório&quot;)
+    @Positive(message = &quot;O valor da aposta deve ser positivo&quot;)
+    @Column(name = &quot;valor_aposta&quot;, nullable = false, precision = 10, scale = 2)
+    private BigDecimal valorAposta;
+
+<span class="fc" id="L40">    @Column(name = &quot;valor_ganho&quot;, precision = 10, scale = 2)</span>
+    private BigDecimal valorGanho = BigDecimal.ZERO;
+
+<span class="fc" id="L43">    @NotNull(message = &quot;O status da partida é obrigatório&quot;)</span>
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusPartida status = StatusPartida.EM_ANDAMENTO;
+
+    @Column(name = &quot;resultado_jogo&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String resultadoJogo;
+
+    @Column(name = &quot;data_inicio&quot;, nullable = false, updatable = false)
+    private LocalDateTime dataInicio;
+
+    @Column(name = &quot;data_fim&quot;)
+    private LocalDateTime dataFim;
+
+    // Construtores
+<span class="fc" id="L58">    public Partida() {</span>
+<span class="fc" id="L59">    }</span>
+
+<span class="fc" id="L61">    public Partida(String nomeJogador, TipoJogo tipoJogo, BigDecimal valorAposta) {</span>
+<span class="fc" id="L62">        this.nomeJogador = nomeJogador;</span>
+<span class="fc" id="L63">        this.tipoJogo = tipoJogo;</span>
+<span class="fc" id="L64">        this.valorAposta = valorAposta;</span>
+<span class="fc" id="L65">    }</span>
+
+    // Métodos de callback JPA
+    @PrePersist
+    protected void onCreate() {
+<span class="nc" id="L70">        dataInicio = LocalDateTime.now();</span>
+<span class="nc" id="L71">    }</span>
+
+    @PreUpdate
+    protected void onUpdate() {
+<span class="nc bnc" id="L75" title="All 4 branches missed.">        if (status != StatusPartida.EM_ANDAMENTO &amp;&amp; dataFim == null) {</span>
+<span class="nc" id="L76">            dataFim = LocalDateTime.now();</span>
+        }
+<span class="nc" id="L78">    }</span>
+
+    // Métodos de negócio
+    public void finalizarPartida(StatusPartida novoStatus, BigDecimal valorGanho, String resultado) {
+<span class="fc" id="L82">        this.status = novoStatus;</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        this.valorGanho = valorGanho != null ? valorGanho : BigDecimal.ZERO;</span>
+<span class="fc" id="L84">        this.resultadoJogo = resultado;</span>
+<span class="fc" id="L85">        this.dataFim = LocalDateTime.now();</span>
+<span class="fc" id="L86">    }</span>
+
+    public BigDecimal calcularLucroLiquido() {
+<span class="nc" id="L89">        return valorGanho.subtract(valorAposta);</span>
+    }
+
+    // Getters e Setters
+    public Long getId() {
+<span class="fc" id="L94">        return id;</span>
+    }
+
+    public void setId(Long id) {
+<span class="fc" id="L98">        this.id = id;</span>
+<span class="fc" id="L99">    }</span>
+
+    public String getNomeJogador() {
+<span class="nc" id="L102">        return nomeJogador;</span>
+    }
+
+    public void setNomeJogador(String nomeJogador) {
+<span class="fc" id="L106">        this.nomeJogador = nomeJogador;</span>
+<span class="fc" id="L107">    }</span>
+
+    public TipoJogo getTipoJogo() {
+<span class="nc" id="L110">        return tipoJogo;</span>
+    }
+
+    public void setTipoJogo(TipoJogo tipoJogo) {
+<span class="fc" id="L114">        this.tipoJogo = tipoJogo;</span>
+<span class="fc" id="L115">    }</span>
+
+    public BigDecimal getValorAposta() {
+<span class="fc" id="L118">        return valorAposta;</span>
+    }
+
+    public void setValorAposta(BigDecimal valorAposta) {
+<span class="fc" id="L122">        this.valorAposta = valorAposta;</span>
+<span class="fc" id="L123">    }</span>
+
+    public BigDecimal getValorGanho() {
+<span class="fc" id="L126">        return valorGanho;</span>
+    }
+
+    public void setValorGanho(BigDecimal valorGanho) {
+<span class="nc" id="L130">        this.valorGanho = valorGanho;</span>
+<span class="nc" id="L131">    }</span>
+
+    public StatusPartida getStatus() {
+<span class="fc" id="L134">        return status;</span>
+    }
+
+    public void setStatus(StatusPartida status) {
+<span class="fc" id="L138">        this.status = status;</span>
+<span class="fc" id="L139">    }</span>
+
+    public String getResultadoJogo() {
+<span class="nc" id="L142">        return resultadoJogo;</span>
+    }
+
+    public void setResultadoJogo(String resultadoJogo) {
+<span class="nc" id="L146">        this.resultadoJogo = resultadoJogo;</span>
+<span class="nc" id="L147">    }</span>
+
+    public LocalDateTime getDataInicio() {
+<span class="nc" id="L150">        return dataInicio;</span>
+    }
+
+    public void setDataInicio(LocalDateTime dataInicio) {
+<span class="nc" id="L154">        this.dataInicio = dataInicio;</span>
+<span class="nc" id="L155">    }</span>
+
+    public LocalDateTime getDataFim() {
+<span class="nc" id="L158">        return dataFim;</span>
+    }
+
+    public void setDataFim(LocalDateTime dataFim) {
+<span class="nc" id="L162">        this.dataFim = dataFim;</span>
+<span class="nc" id="L163">    }</span>
+
+    // equals e hashCode
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="nc bnc" id="L169" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="nc" id="L170">        Partida partida = (Partida) o;</span>
+<span class="nc" id="L171">        return Objects.equals(id, partida.id);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L176">        return Objects.hash(id);</span>
+    }
+
+    // toString
+    @Override
+    public String toString() {
+<span class="nc" id="L182">        return &quot;Partida{&quot; +</span>
+                &quot;id=&quot; + id +
+                &quot;, nomeJogador='&quot; + nomeJogador + '\'' +
+                &quot;, tipoJogo=&quot; + tipoJogo +
+                &quot;, valorAposta=&quot; + valorAposta +
+                &quot;, valorGanho=&quot; + valorGanho +
+                &quot;, status=&quot; + status +
+                '}';
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
